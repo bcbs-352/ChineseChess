@@ -18,10 +18,12 @@ public class TcpServer : MonoBehaviour
     byte[] recvBuffer, sendBuffer;
     string recvStr, sendStr;
     int recvLength;
-    Thread connectThread;
-    Socket listenSocket, connectSocket;
 
-    private bool isSendData = false;
+    // 监听接口和线程只有一个，单独拿出来
+    Thread listenThread;
+    Socket listenSocket, clientSocket;
+
+    private bool isSendData = false,isClose = false;
 
     private void Awake()
     {
@@ -55,9 +57,11 @@ public class TcpServer : MonoBehaviour
         listenSocket.Listen(5);
 
         // 创建监听函数线程，传入linstenSocket对象
-        Thread linstenThread = new Thread(SocketListen);
-        linstenThread.IsBackground = true;
-        linstenThread.Start(listenSocket);
+        listenThread = new Thread(SocketListen);
+        listenThread.IsBackground = true;
+        listenThread.Start(listenSocket);
+
+        ThreadPool.SetMaxThreads(10, 10);
     }
 
 
@@ -71,42 +75,46 @@ public class TcpServer : MonoBehaviour
         while (true)
         {
             //  等待客户端连接
-            connectSocket = listenSocket.Accept();
-            Debug.Log(connectSocket.RemoteEndPoint.ToString() + ":" + "连接成功");
+            clientSocket = listenSocket.Accept();
+            Debug.Log(clientSocket.RemoteEndPoint.ToString() + ":" + "连接成功");
+
 
             // 接收数据线程
-            Thread recvThread = new Thread(SocketReceived);
-            recvThread.IsBackground = true;
-            recvThread.Start(connectSocket);
+            ThreadPool.QueueUserWorkItem(new WaitCallback(SocketReceived), clientSocket);
+            //Thread recvThread = new Thread(SocketReceived);
+            //recvThread.IsBackground = true;
+            //recvThread.Start(clientSocket);
+
+
             // 发送数据线程
-            Thread sendThread = new Thread(SocketSend);
-            sendThread.IsBackground = true;
-            sendThread.Start(connectSocket);
+            ThreadPool.QueueUserWorkItem(new WaitCallback(SocketSend), clientSocket);
+            //Thread sendThread = new Thread(SocketSend);
+            //sendThread.IsBackground = true;
+            //sendThread.Start(clientSocket);
         }
 
     }
 
     void SocketReceived(object inSocket)
     {
-        Socket sendSocket = inSocket as Socket;
+        Socket recvSocket = inSocket as Socket;
         while (true)
         {
-            lock (this)
-            {
-                recvBuffer = new byte[1024 * 1024];
-                recvLength = sendSocket.Receive(recvBuffer);
-                if (recvLength == 0)
-                    break;
-            }
+            recvBuffer = new byte[1024 * 1024];
+            recvLength = recvSocket.Receive(recvBuffer);
+            if (recvLength == 0)
+                break;
             recvStr = Encoding.UTF8.GetString(recvBuffer, 0, recvLength);
             Debug.Log("接收到信息:" + recvStr);
 
+            if (isClose)
+                return;
         }
     }
 
     void SocketSend(object inSocket)
     {
-        connectSocket = inSocket as Socket;
+        clientSocket = inSocket as Socket;
         while (true)
         {
             if (isSendData)
@@ -118,37 +126,56 @@ public class TcpServer : MonoBehaviour
                     Debug.Log("发送数据:" + sendStr);
                 }
                 if (sendBuffer != null && sendBuffer.Length > 0)
-                    connectSocket.Send(sendBuffer);
+                    clientSocket.Send(sendBuffer);
 
                 sendBuffer = null;
                 sendStr = null;
             }
 
+            if (isClose)
+                return;
         }
     }
 
+    /// <summary>
+    /// 中断、终止所有线程，关闭所有接口
+    /// </summary>
     public void SocketQuit()
     {
+        if (listenThread != null)
+        {
+            listenThread.Interrupt();
+            listenThread.Abort();
+        }
+        ThreadPool.SetMaxThreads(0, 0);
+        isClose = true;
+        //for (int i = 0; i < sendThreadPool.Count; ++i)
+        //{
+        //    Debug.Log("终止线程:" + sendThreadPool[i].Name);
+        //    sendThreadPool[i].Interrupt();
+        //    sendThreadPool[i].Abort();
+        //    recvThreadPool[i].Interrupt();
+        //    recvThreadPool[i].Abort();
+        //}
+
         if (listenSocket != null)
             listenSocket.Close();
-        if (connectSocket != null)
-            connectSocket.Close();
-
-        if(connectThread != null)
-        {
-            connectThread.Interrupt();
-            connectThread.Abort();
-        }
+        if (clientSocket != null)
+            clientSocket.Close();
     }
 
+    // 发送UTF8字符串
     public void SetSendStr(string str)
     {
         sendStr = str;
         isSendData = true;
     }
+
+    // 发送字节流
     public void SetSendBytes(byte[] bytes)
     {
         sendBuffer = bytes;
+        Debug.Log("字节流长度:"+bytes.Length);
         isSendData = true;
     }
 
