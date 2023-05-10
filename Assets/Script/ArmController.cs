@@ -11,7 +11,7 @@ public class ArmController : MonoBehaviour
     public float rotSpeed = 0.25f, zoomSpeed = 2f, liftSpeed = 0.5f;
 
     public Transform revoluteJointA, revoluteJointB, liftPair;
-    public Transform endPoint, zoomTarget;
+    public Transform zoomTarget, endPoint;
     public Slider[] sliders;
 
     public bool isChecking = false;
@@ -29,7 +29,7 @@ public class ArmController : MonoBehaviour
     void Update()
     {
         //Debug.Log(endPoint.localPosition.z + " " + endPoint.localPosition.x);
-        ArmMoving(endPoint.localPosition.z, endPoint.localPosition.x, 0);
+        ArmMoving(endPoint.localPosition.z, endPoint.localPosition.x, -endPoint.localPosition.y);
 
         if (isChecking)
             CameraMoving();
@@ -51,10 +51,12 @@ public class ArmController : MonoBehaviour
 
         revoluteJointA.localRotation = Quaternion.Euler(0, theta1 * Mathf.Rad2Deg, 180);
         revoluteJointB.localRotation = Quaternion.Euler(0, theta2 * Mathf.Rad2Deg, 0);
-        Debug.Log(theta1 * Mathf.Rad2Deg + " " + theta2 * Mathf.Rad2Deg);
+        //liftPair.localPosition = new Vector3(0, z, 0);
+        //Debug.Log(theta1 * Mathf.Rad2Deg + " " + theta2 * Mathf.Rad2Deg);
 
         sliders[0].value = theta1 * Mathf.Rad2Deg;
         sliders[1].value = theta2 * Mathf.Rad2Deg;
+        sliders[2].value = z;
     }
 
     void CameraMoving()
@@ -96,5 +98,11 @@ public class ArmController : MonoBehaviour
     {
         int x = (int)sliders[3].value, y = (int)sliders[4].value;
         ArmMoving(0.133333f - x * 0.1f / 3, 0.066666f + y * 0.1f / 3, 0);
+    }
+
+    public void SetEndPointPos(Vector3 pos)
+    {
+        endPoint.localPosition = pos;
+        ArmMoving(endPoint.localPosition.z, endPoint.localPosition.x, -endPoint.localPosition.y);
     }
 }

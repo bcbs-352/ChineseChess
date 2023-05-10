@@ -61,7 +61,7 @@ public class ChessManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 棋子会遮挡Point的Collider,所以对方棋子的Colloder要先禁用
+    /// 棋子会遮挡Point的Collider,所以对方棋子的Collider要先禁用
     /// </summary>
     /// <param name="moveSide"></param>
     public static void UpdateChessCollider(MoveSide moveSide)

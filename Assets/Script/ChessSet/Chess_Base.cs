@@ -85,7 +85,7 @@ public abstract class Chess_Base : MonoBehaviour, IPointerClickHandler
     }
 
     /// <summary>
-    /// 该棋子被点击时
+    /// 该棋子Collider被左键点击时
     /// </summary>
     /// <param name="eventData"></param>
     public void OnPointerClick(PointerEventData eventData)
@@ -96,7 +96,7 @@ public abstract class Chess_Base : MonoBehaviour, IPointerClickHandler
         if (chessState == ChessState.Free && (int)GameController.moveSide == (int)chessColor)
         {
             BeSelected();
-            SelectedEvent();    // 通知其他棋子
+            SelectedEvent();    // 通知其他棋子取消被选中
         }
         else
         {

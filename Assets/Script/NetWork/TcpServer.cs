@@ -23,7 +23,10 @@ public class TcpServer : MonoBehaviour
     Thread listenThread;
     Socket listenSocket, clientSocket;
 
-    private bool isSendData = false,isClose = false;
+    private bool isSendData = false, isClose = false;
+
+     public Vector3 location;
+     public bool isArmSync = false;
 
     private void Awake()
     {
@@ -101,12 +104,35 @@ public class TcpServer : MonoBehaviour
         while (true)
         {
             recvBuffer = new byte[1024 * 1024];
+            recvStr = "";
             recvLength = recvSocket.Receive(recvBuffer);
-            if (recvLength == 0)
-                break;
-            recvStr = Encoding.UTF8.GetString(recvBuffer, 0, recvLength);
+            while (recvLength > 0)
+            {
+                recvStr += Encoding.UTF8.GetString(recvBuffer, 0, recvLength);
+                recvBuffer = new byte[1024 * 1024];
+                recvLength = recvSocket.Receive(recvBuffer);
+                if (recvStr.IndexOf("\n") > 0)
+                    break;
+            }
+            //recvLength = recvSocket.Receive(recvBuffer);
+            //if (recvLength <= 0)
+            //    break;
+            //recvStr = Encoding.UTF8.GetString(recvBuffer, 0, recvLength);
+            if (recvStr.Length <= 0)
+                return;
             Debug.Log("接收到信息:" + recvStr);
-
+            if (recvStr.IndexOf("setPos") >= 0)
+            {
+                int x_index = recvStr.IndexOf("X"), y_index = recvStr.IndexOf("Y"), z_index = recvStr.IndexOf("Z");
+                if (x_index < 2 || y_index < 2 || z_index < 2 || y_index <= x_index || z_index <= y_index)
+                    return;
+                //Debug.Log("设置坐标" + x_index + y_index + z_index);
+                float x = float.Parse(recvStr.Substring(x_index + 1, y_index- x_index -1 )) / 1000f;
+                float y = float.Parse(recvStr.Substring(y_index + 1, z_index - y_index - 1)) / 1000f;
+                float z = float.Parse(recvStr.Substring(z_index + 1)) / 1000f;
+                location = new Vector3(y, -z, x);
+                isArmSync = true;
+            }
             if (isClose)
                 return;
         }
@@ -175,8 +201,7 @@ public class TcpServer : MonoBehaviour
     public void SetSendBytes(byte[] bytes)
     {
         sendBuffer = bytes;
-        Debug.Log("字节流长度:"+bytes.Length);
+        Debug.Log("字节流长度:" + bytes.Length);
         isSendData = true;
     }
-
 }

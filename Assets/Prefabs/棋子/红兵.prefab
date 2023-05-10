@@ -62,7 +62,7 @@ MeshRenderer:
   m_RendererPriority: 0
   m_Materials:
   - {fileID: 2100000, guid: 181e382319e8b3140904054793ff2694, type: 2}
-  - {fileID: 2100000, guid: 6ee11dc33db8ccf4c82e44e24b393959, type: 2}
+  - {fileID: 2100000, guid: 94563961ebe881b48bad73be009a763e, type: 2}
   - {fileID: 2100000, guid: 94563961ebe881b48bad73be009a763e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
@@ -115,4 +115,4 @@ MonoBehaviour:
   chessState: 0
   chessCharacter: 6
   currentPos: {x: 0, y: 0}
-  accesiblePoints: []
+  accessiblePoints: []

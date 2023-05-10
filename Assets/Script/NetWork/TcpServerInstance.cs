@@ -5,22 +5,26 @@ using UnityEngine;
 public class TcpServerInstance : MonoBehaviour
 {
     public static TcpServerInstance instance;
-    TcpServer tcpServer;
-
+    public TcpServer tcpServer;
+    
     private void Awake()
     {
-        DontDestroyOnLoad(this.gameObject);
+        //DontDestroyOnLoad(this.gameObject);
     }
 
     private void Start()
     {
-        tcpServer = gameObject.AddComponent<TcpServer>();
+        //tcpServer = gameObject.AddComponent<TcpServer>();
         tcpServer.SocketConnect();
     }
 
     void Update()
     {
-        
+        if(tcpServer.isArmSync)
+        {
+            this.GetComponent<ArmController>().SetEndPointPos(tcpServer.location);
+            tcpServer.isArmSync = false;
+        }
     }
 
     public void SendStr(string str)
